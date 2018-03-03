@@ -1,52 +1,55 @@
-package main
+package option
 
 import (
 	"container/list"
 	"fmt"
 )
 
-type optionCB func(string) bool
+type OptionCB func(string) bool
 
-type option struct {
+type Option struct {
 	text        string
 	description string
-	callback    optionCB
+	callback    OptionCB
 	data        string
 }
 
-func (o option) String() string {
+func (o Option) String() string {
 	return fmt.Sprintf("-%-10s %s", o.text, o.description)
 }
 
-func newOption(text, description string) *option {
-	return &option{text, description, nil, ""}
+func NewOption(text, description string) *Option {
+	return &Option{text, description, nil, ""}
 }
 
-func newOptionCB(text, description string, callback optionCB) *option {
-	return &option{text, description, callback, ""}
+func NewOptionCB(text, description string, callback OptionCB) *Option {
+	return &Option{text, description, callback, ""}
 }
 
-type verb struct {
-	main       *option
+// Verb contains an action callback, text description and optional options
+type Verb struct {
+	main       *Option
 	suboptions *list.List
-	callback   optionCB
+	callback   OptionCB
 }
 
-func newVerb(text, description string, callback optionCB) *verb {
-	v := verb{}
-	v.main = newOption(text, description)
+// NewVerb creates a new verb with an empty list of options
+func NewVerb(text, description string, callback OptionCB) *Verb {
+	v := Verb{}
+	v.main = NewOption(text, description)
 	v.callback = callback
 	v.suboptions = list.New()
 	return &v
 }
 
-func (v verb) onVerbFound(val string) {
+// OnVerbFound calls the callback attached to the verb if it exits
+func (v Verb) OnVerbFound(val string) {
 	if v.callback != nil {
 		v.callback(val)
 	}
 }
 
-func (v verb) String() string {
+func (v Verb) String() string {
 	s := fmt.Sprintf("%-5s %s", v.main.text, v.main.description)
 	for e := v.suboptions.Front(); e != nil; e = e.Next() {
 		s = s + fmt.Sprintf("\n     -%s", e.Value)
@@ -54,15 +57,7 @@ func (v verb) String() string {
 	return s
 }
 
-func onVerbGet(val string) bool {
-	fmt.Println("Get verb here saw " + val)
-	return true
-}
-
-func main() {
-	opt := newOption("test", "Select the test option")
-	verb := newVerb("get", "Retrieve information about the node", onVerbGet)
-	verb.suboptions.PushBack(opt)
-	fmt.Println(verb)
-	verb.onVerbFound("Bitching")
+// AddOption adds an option to the verb
+func (v Verb) AddOption(o *Option) {
+	v.suboptions.PushBack(o)
 }
