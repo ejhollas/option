@@ -3,6 +3,7 @@ package main
 import (
 	"eric/option/option"
 	"fmt"
+	"os"
 )
 
 func onVerbGet(val string) bool {
@@ -16,4 +17,8 @@ func main() {
 	verb.AddOption(opt)
 	fmt.Println(verb)
 	verb.OnVerbFound("Bitching")
+
+	parser := option.NewParser("test.exe")
+
+	parser.Parse(os.Args)
 }

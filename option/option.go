@@ -3,6 +3,7 @@ package option
 import (
 	"container/list"
 	"fmt"
+	"strings"
 )
 
 type OptionCB func(string) bool
@@ -33,7 +34,7 @@ type Verb struct {
 	callback   OptionCB
 }
 
-// NewVerb creates a new verb with an empty list of options
+// NewVerb returns an initilized Verb
 func NewVerb(text, description string, callback OptionCB) *Verb {
 	v := Verb{}
 	v.main = NewOption(text, description)
@@ -60,4 +61,102 @@ func (v Verb) String() string {
 // AddOption adds an option to the verb
 func (v Verb) AddOption(o *Option) {
 	v.suboptions.PushBack(o)
+}
+
+// Parser structure
+type Parser struct {
+	programName          string
+	verbs                *list.List
+	options              *list.List
+	activeVerb           *Verb
+	activePreVerbOptions *list.List
+	activeOptions        *list.List
+}
+
+// NewParser returns an initialized Parser
+func NewParser(programName string) *Parser {
+	p := Parser{}
+	p.programName = programName
+	p.verbs = list.New()
+	p.options = list.New()
+	return &p
+}
+
+// Parse reviews command line array and creates list of verb and options to run
+func (p *Parser) Parse(args []string) bool {
+	argHandled := 0
+	p.activeVerb = nil
+
+	for _, arg := range args {
+		if nil == p.activeVerb && arg[1] == '-' {
+			// Find options before verbs
+			argOption := strings.Split(arg, "=")
+			for e := p.options.Front(); e != nil; e = e.Next() {
+				option := e.Value.(Option)
+				if argOption[0] == option.text {
+					if len(argOption) > 1 {
+						option.data = argOption[1]
+						p.activePreVerbOptions.PushBack(option)
+						argHandled++
+					}
+				}
+			}
+		} else {
+			if nil == p.activeVerb {
+				// Find Verb
+				for e := p.verbs.Front(); e != nil; e = e.Next() {
+					verb := e.Value.(Verb)
+					if verb.main.text == arg {
+						p.activeVerb = &verb
+						argHandled++
+					}
+				}
+			} else {
+				// Assume all other options are verb options
+				if len(args) < 2 {
+					continue
+				}
+				// When we split, ignore the first character
+				argOption := strings.Split(arg[2:], "=")
+				for e := p.activeVerb.suboptions.Front(); e != nil; e = e.Next() {
+					option := e.Value.(Option)
+					if argOption[0] == option.text {
+						if len(argOption) > 1 {
+							option.data = argOption[1]
+							p.activeOptions.PushBack(option)
+							argHandled++
+						}
+					}
+				}
+			}
+		}
+	}
+	if len(args) == 0 {
+		p.showHelp()
+	} else {
+		if len(args) != argHandled {
+			p.showHelp()
+		} else {
+			return true
+		}
+	}
+	if p.activeVerb == nil {
+		// Missing Verb
+		return false
+	} else {
+		// Invalid Option
+		return false
+	}
+}
+
+func (p Parser) showHelp() {
+	fmt.Printf("usage: %s  [-options] [command] [--command_option=value]\n", p.programName)
+	fmt.Println("options:")
+	for e := p.options.Front(); e != nil; e = e.Next() {
+		fmt.Printf("   %s\n", e.Value.(Option))
+	}
+	fmt.Println("commands:")
+	for e := p.verbs.Front(); e != nil; e = e.Next() {
+		fmt.Printf("   %s\n", e.Value.(Verb))
+	}
 }
