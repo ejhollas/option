@@ -92,7 +92,7 @@ func (p *Parser) Parse(args []string) bool {
 			// Find options before verbs
 			argOption := strings.Split(arg, "=")
 			for e := p.options.Front(); e != nil; e = e.Next() {
-				option := e.Value.(Option)
+				option := e.Value.(*Option)
 				if argOption[0] == option.text {
 					if len(argOption) > 1 {
 						option.data = argOption[1]
@@ -105,9 +105,9 @@ func (p *Parser) Parse(args []string) bool {
 			if nil == p.activeVerb {
 				// Find Verb
 				for e := p.verbs.Front(); e != nil; e = e.Next() {
-					verb := e.Value.(Verb)
+					verb := e.Value.(*Verb)
 					if verb.main.text == arg {
-						p.activeVerb = &verb
+						p.activeVerb = verb
 						argHandled++
 					}
 				}
@@ -119,7 +119,7 @@ func (p *Parser) Parse(args []string) bool {
 				// When we split, ignore the first character
 				argOption := strings.Split(arg[2:], "=")
 				for e := p.activeVerb.suboptions.Front(); e != nil; e = e.Next() {
-					option := e.Value.(Option)
+					option := e.Value.(*Option)
 					if argOption[0] == option.text {
 						if len(argOption) > 1 {
 							option.data = argOption[1]
@@ -132,10 +132,10 @@ func (p *Parser) Parse(args []string) bool {
 		}
 	}
 	if len(args) == 0 {
-		p.showHelp()
+		p.ShowHelp()
 	} else {
 		if len(args) != argHandled {
-			p.showHelp()
+			p.ShowHelp()
 		} else {
 			return true
 		}
@@ -149,14 +149,25 @@ func (p *Parser) Parse(args []string) bool {
 	}
 }
 
-func (p Parser) showHelp() {
+// ShowHelp prints the options, verbs, and suboptions dynamically
+func (p Parser) ShowHelp() {
 	fmt.Printf("usage: %s  [-options] [command] [--command_option=value]\n", p.programName)
 	fmt.Println("options:")
 	for e := p.options.Front(); e != nil; e = e.Next() {
-		fmt.Printf("   %s\n", e.Value.(Option))
+		fmt.Printf("   %s\n", e.Value.(*Option))
 	}
 	fmt.Println("commands:")
 	for e := p.verbs.Front(); e != nil; e = e.Next() {
-		fmt.Printf("   %s\n", e.Value.(Verb))
+		fmt.Printf("   %s\n", e.Value.(*Verb))
 	}
+}
+
+// AddOption adds the option to the parser
+func (p Parser) AddOption(o *Option) {
+	p.options.PushBack(o)
+}
+
+// AddVerb adds the verb to the parser
+func (p Parser) AddVerb(v *Verb) {
+	p.verbs.PushBack(v)
 }
