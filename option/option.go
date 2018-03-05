@@ -7,16 +7,20 @@ import (
 	"strings"
 )
 
-type OptionCB func(string) bool
+type OptionCB func(option *Option) (result bool, err error)
+type VerbCB func(verb *Verb) (result bool, err error)
 
 type Option struct {
 	text        string
 	description string
 	callback    OptionCB
-	data        string
+	Data        string
 }
 
-func (o Option) String() string {
+func (o *Option) String() string {
+	if o.Data != "" {
+		return fmt.Sprintf("-%-10s %s Data='%s", o.text, o.description, o.Data)
+	}
 	return fmt.Sprintf("-%-10s %s", o.text, o.description)
 }
 
@@ -31,9 +35,9 @@ func NewOptionCB(text, description string, callback OptionCB) *Option {
 }
 
 // OnOptionFound calls the callback attached to the verb if it exits
-func (o Option) OnOptionFound(val string) {
+func (o *Option) OnOptionFound() {
 	if o.callback != nil {
-		o.callback(val)
+		o.callback(o)
 	}
 }
 
@@ -41,11 +45,11 @@ func (o Option) OnOptionFound(val string) {
 type Verb struct {
 	main       *Option
 	suboptions *list.List
-	callback   OptionCB
+	callback   VerbCB
 }
 
 // NewVerb returns an initilized Verb
-func NewVerb(text, description string, callback OptionCB) *Verb {
+func NewVerb(text, description string, callback VerbCB) *Verb {
 	v := Verb{}
 	v.main = NewOption(text, description)
 	v.callback = callback
@@ -54,13 +58,13 @@ func NewVerb(text, description string, callback OptionCB) *Verb {
 }
 
 // OnVerbFound calls the callback attached to the verb if it exits
-func (v Verb) OnVerbFound(val string) {
+func (v *Verb) OnVerbFound() {
 	if v.callback != nil {
-		v.callback(val)
+		v.callback(v)
 	}
 }
 
-func (v Verb) String() string {
+func (v *Verb) String() string {
 	s := fmt.Sprintf("%-5s %s", v.main.text, v.main.description)
 	for e := v.suboptions.Front(); e != nil; e = e.Next() {
 		s = s + fmt.Sprintf("\n     -%s", e.Value)
@@ -69,7 +73,7 @@ func (v Verb) String() string {
 }
 
 // AddOption adds an option to the verb
-func (v Verb) AddOption(o *Option) {
+func (v *Verb) AddOption(o *Option) {
 	v.suboptions.PushBack(o)
 }
 
@@ -117,7 +121,7 @@ func (p *Parser) Parse(args []string) bool {
 				option := e.Value.(*Option)
 				if argOption[0] == option.text {
 					if len(argOption) > 1 {
-						option.data = argOption[1]
+						option.Data = argOption[1]
 						p.activePreVerbOptions.PushBack(option)
 						argHandled++
 						fmt.Println("Debug: Found PreOption: " + option.String())
@@ -132,7 +136,6 @@ func (p *Parser) Parse(args []string) bool {
 					if verb.main.text == arg {
 						p.activeVerb = verb
 						argHandled++
-						fmt.Println("Debug: Found Verb: " + verb.String())
 					}
 				}
 			} else {
@@ -146,10 +149,9 @@ func (p *Parser) Parse(args []string) bool {
 					option := e.Value.(*Option)
 					if argOption[0] == option.text {
 						if len(argOption) > 1 {
-							option.data = argOption[1]
+							option.Data = argOption[1]
 							p.activeOptions.PushBack(option)
 							argHandled++
-							fmt.Println("Debug: Found Option: " + option.String())
 						}
 					}
 				}
@@ -202,8 +204,17 @@ func (p Parser) AddVerb(v *Verb) {
 func (p Parser) Run() {
 	if nil != p.activePreVerbOptions {
 		// Process the pre-verb options
-		for e := p.activeOptions.Front(); e != nil; e = e.Next() {
-			e.Value.(*Option).OnOptionFound("")
+		for e := p.activePreVerbOptions.Front(); e != nil; e = e.Next() {
+			e.Value.(*Option).OnOptionFound()
 		}
+	}
+	// Process the verb
+	if nil != p.activeVerb {
+		// Process the post-verb options
+		for e := p.activeOptions.Front(); e != nil; e = e.Next() {
+			e.Value.(*Option).OnOptionFound()
+		}
+		// Finally process the verb
+		p.activeVerb.OnVerbFound()
 	}
 }
