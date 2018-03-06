@@ -10,6 +10,8 @@ import (
 type OptionCB func(option *Option) (result bool, err error)
 type VerbCB func(verb *Verb) (result bool, err error)
 
+var debug bool = false
+
 type Option struct {
 	text        string
 	description string
@@ -113,7 +115,9 @@ func (p *Parser) Parse(args []string) bool {
 
 	// Begin parsing args after the program name
 	for _, arg := range args[1:] {
-		fmt.Println("Debug: Considering: " + arg)
+		if debug {
+			fmt.Println("Debug: Considering: " + arg)
+		}
 		if nil == p.activeVerb && arg[1] == '-' {
 			// Find options before verbs
 			argOption := strings.Split(arg, "=")
@@ -124,7 +128,9 @@ func (p *Parser) Parse(args []string) bool {
 						option.Data = argOption[1]
 						p.activePreVerbOptions.PushBack(option)
 						argHandled++
-						fmt.Println("Debug: Found PreOption: " + option.String())
+						if debug {
+							fmt.Println("Debug: Found PreOption: " + option.String())
+						}
 					}
 				}
 			}
@@ -152,13 +158,15 @@ func (p *Parser) Parse(args []string) bool {
 							option.Data = argOption[1]
 							p.activeOptions.PushBack(option)
 							argHandled++
+						} else {
+							p.activeOptions.PushBack(option)
+							argHandled++
 						}
 					}
 				}
 			}
 		}
 	}
-	fmt.Printf("Debug: args=%d handled=%d\n", argsToConsider, argHandled)
 
 	// Is not all of the args were handled, show help
 	if argsToConsider != argHandled {
@@ -167,6 +175,7 @@ func (p *Parser) Parse(args []string) bool {
 		return true
 	}
 
+	fmt.Printf("Debug: args=%d handled=%d\n", argsToConsider, argHandled)
 	if p.activeVerb == nil {
 		// Missing Verb
 		fmt.Println("Debug: Missing Verb")
