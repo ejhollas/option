@@ -10,7 +10,7 @@ import (
 type OptionCB func(option *Option) (result bool, err error)
 type VerbCB func(verb *Verb) (result bool, err error)
 
-var debug bool = false
+var debug = false
 
 type Option struct {
 	text        string
@@ -21,7 +21,7 @@ type Option struct {
 
 func (o *Option) String() string {
 	if o.Data != "" {
-		return fmt.Sprintf("-%-10s %s Data='%s", o.text, o.description, o.Data)
+		return fmt.Sprintf("-%-10s %s Data='%s'", o.text, o.description, o.Data)
 	}
 	return fmt.Sprintf("-%-10s %s", o.text, o.description)
 }
@@ -118,9 +118,10 @@ func (p *Parser) Parse(args []string) bool {
 		if debug {
 			fmt.Println("Debug: Considering: " + arg)
 		}
-		if nil == p.activeVerb && arg[1] == '-' {
+		if nil == p.activeVerb && arg[0] == '-' {
 			// Find options before verbs
-			argOption := strings.Split(arg, "=")
+			// When we split, ignore the first character
+			argOption := strings.Split(arg[1:], "=")
 			for e := p.options.Front(); e != nil; e = e.Next() {
 				option := e.Value.(*Option)
 				if argOption[0] == option.text {
@@ -149,7 +150,7 @@ func (p *Parser) Parse(args []string) bool {
 				if len(args) < 2 {
 					continue
 				}
-				// When we split, ignore the first character
+				// When we split, ignore the first two characters
 				argOption := strings.Split(arg[2:], "=")
 				for e := p.activeVerb.suboptions.Front(); e != nil; e = e.Next() {
 					option := e.Value.(*Option)
