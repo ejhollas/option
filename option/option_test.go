@@ -4,6 +4,8 @@ import (
 	"testing"
 )
 
+// See https://golang.org/pkg/testing/
+
 func TestOption(t *testing.T) {
 	opt := NewOption("Test", "Description")
 	if opt.callback != nil {
@@ -16,4 +18,16 @@ func TestOption(t *testing.T) {
 	if opt.String() != want {
 		t.Errorf("Got:'%s' Wanted:'%s'", opt.String(), want)
 	}
+}
+
+func ExampleParser() {
+	args := make([]string, 2)
+	args[0] = "test"
+	args[1] = ""
+	p := NewParser()
+	if p.Parse(args) {
+		p.Run()
+	}
+	// Output:
+	// Usage: test  [-options] [command] [--command_option=value]
 }
