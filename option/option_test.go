@@ -29,5 +29,5 @@ func ExampleParser() {
 		p.Run()
 	}
 	// Output:
-	// Usage: test  [-options] [command] [--command_option=value]
+	// usage: test  [-options] [command] [--command_option=value]
 }
