@@ -12,6 +12,16 @@ type VerbCB func(verb *Verb) (result bool, err error)
 
 var debug = false
 
+type Optioner interface {
+	onOption(option *Option) (result bool, err error)
+}
+
+type Verber interface {
+	OnVerb() (result bool, err error)
+}
+
+type VerberFunc func() (bool, error)
+
 type Option struct {
 	text        string
 	description string
@@ -118,7 +128,7 @@ func (p *Parser) Parse(args []string) bool {
 		if debug {
 			fmt.Println("Debug: Considering: " + arg)
 		}
-		if nil == p.activeVerb && arg[0] == '-' {
+		if nil == p.activeVerb && len(arg) > 1 && arg[0] == '-' {
 			// Find options before verbs
 			// When we split, ignore the first character
 			argOption := strings.Split(arg[1:], "=")
@@ -176,13 +186,19 @@ func (p *Parser) Parse(args []string) bool {
 		return true
 	}
 
-	fmt.Printf("Debug: args=%d handled=%d\n", argsToConsider, argHandled)
+	if debug {
+		fmt.Printf("Debug: args=%d handled=%d\n", argsToConsider, argHandled)
+	}
 	if p.activeVerb == nil {
 		// Missing Verb
-		fmt.Println("Debug: Missing Verb")
+		if debug {
+			fmt.Println("Debug: Missing Verb")
+		}
 	} else {
 		// Invalid Option
-		fmt.Println("Debug: Invalid Option")
+		if debug {
+			fmt.Println("Debug: Invalid Option")
+		}
 	}
 	return false
 }
@@ -190,13 +206,17 @@ func (p *Parser) Parse(args []string) bool {
 // ShowHelp prints the options, verbs, and suboptions dynamically
 func (p Parser) ShowHelp() {
 	fmt.Printf("usage: %s  [-options] [command] [--command_option=value]\n", p.programName)
-	fmt.Println("options:")
-	for e := p.options.Front(); e != nil; e = e.Next() {
-		fmt.Printf("   %s\n", e.Value.(*Option))
+	if p.options.Len() > 0 {
+		fmt.Println("options:")
+		for e := p.options.Front(); e != nil; e = e.Next() {
+			fmt.Printf("   %s\n", e.Value.(*Option))
+		}
 	}
-	fmt.Println("commands:")
-	for e := p.verbs.Front(); e != nil; e = e.Next() {
-		fmt.Printf("   %s\n", e.Value.(*Verb))
+	if p.verbs.Len() > 0 {
+		fmt.Println("commands:")
+		for e := p.verbs.Front(); e != nil; e = e.Next() {
+			fmt.Printf("   %s\n", e.Value.(*Verb))
+		}
 	}
 }
 
