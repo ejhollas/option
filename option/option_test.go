@@ -56,7 +56,7 @@ func onPreVerb(o *Option) (bool, error) {
 	return true, nil
 }
 
-func TestParser2(t *testing.T) {
+func ExampleParser() {
 	p := NewParser()
 	args := make([]string, 2)
 	args[0] = "test"
@@ -75,7 +75,7 @@ func onDrink(v *Verb) (bool, error) {
 	return true, nil
 }
 
-func TestCallback(t *testing.T) {
+func ExampleCallback() {
 	args := make([]string, 3)
 	args[0] = "test"
 	args[1] = "drink"
@@ -90,4 +90,19 @@ func TestCallback(t *testing.T) {
 	}
 	// Output:
 	// Drinking red
+}
+
+func ExampleHelp() {
+	p := NewParser()
+	args := make([]string, 2)
+	args[0] = "test"
+	args[1] = "--help"
+	p.AddOption(NewOptionCB("preverb", "option that comes before the verb", onPreVerb))
+	if p.Parse(args) {
+		p.Run()
+	}
+	// Output:
+	// usage: test  [-options] [command] [--command_option=value]
+	// options:
+	//    -preverb    option that comes before the verb
 }
