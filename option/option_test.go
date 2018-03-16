@@ -51,6 +51,24 @@ func TestParser(t *testing.T) {
 	// usage: test  [-options] [command] [--command_option=value]
 }
 
+func onPreVerb(o *Option) (bool, error) {
+	fmt.Println("onPreVerb=" + o.Data)
+	return true, nil
+}
+
+func TestParser2(t *testing.T) {
+	p := NewParser()
+	args := make([]string, 2)
+	args[0] = "test"
+	args[1] = "-preverb=matrix"
+	p.AddOption(NewOptionCB("preverb", "option that come before the verb", onPreVerb))
+	if p.Parse(args) {
+		p.Run()
+	}
+	// Output:
+	// onPreVerb=matrix
+}
+
 func onDrink(v *Verb) (bool, error) {
 	flavor := v.GetOption("flavor")
 	fmt.Printf("Drinking %s\n", flavor.Data)
