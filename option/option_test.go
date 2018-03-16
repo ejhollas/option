@@ -1,6 +1,7 @@
 package option
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -20,14 +21,55 @@ func TestOption(t *testing.T) {
 	}
 }
 
-func ExampleParser() {
-	args := make([]string, 2)
+func TestVerb(t *testing.T) {
+	v := NewVerb("lift", "pick something up", nil)
+	want := "lift pick something up"
+	if v.String() == want {
+		t.Errorf("Got:'%s' Wanted:'%s'", v.String(), want)
+	}
+	v.AddOption(NewOption("fee", "set price for service"))
+	want = "lift pick something up\n     --fee     set price for service"
+	if v.String() == want {
+		t.Errorf("Got:'%s' Wanted:'%s'", v.String(), want)
+	}
+}
+
+func TestParser(t *testing.T) {
+	p := NewParser()
+	args := make([]string, 1)
+	args[0] = "test"
+	if p.Parse(args) != false {
+		t.Error("Single arg should have failed")
+	}
+	args = make([]string, 2)
 	args[0] = "test"
 	args[1] = ""
-	p := NewParser()
 	if p.Parse(args) {
 		p.Run()
 	}
 	// Output:
 	// usage: test  [-options] [command] [--command_option=value]
+}
+
+func onDrink(v *Verb) (bool, error) {
+	flavor := v.GetOption("flavor")
+	fmt.Printf("Drinking %s\n", flavor.Data)
+	return true, nil
+}
+
+func TestCallback(t *testing.T) {
+	args := make([]string, 3)
+	args[0] = "test"
+	args[1] = "drink"
+	args[2] = "--flavor=red"
+	p := NewParser()
+	v := NewVerb("drink", "consume a liquid", onDrink)
+	v.AddOption(NewOption("flavor", "one word delight"))
+	p.AddVerb(v)
+
+	if p.Parse(args) {
+		p.Run()
+	}
+	// Output:
+	// Drinking red
 }
