@@ -47,10 +47,11 @@ func NewOptionCB(text, description string, callback OptionCB) *Option {
 }
 
 // OnOptionFound calls the callback attached to the verb if it exits
-func (o *Option) OnOptionFound() {
+func (o *Option) OnOptionFound() (result bool, err error) {
 	if o.callback != nil {
-		o.callback(o)
+		return o.callback(o)
 	}
+	return true, nil
 }
 
 // Verb contains an action callback, text description and optional options
@@ -58,6 +59,7 @@ type Verb struct {
 	main       *Option
 	suboptions *list.List
 	callback   VerbCB
+	opts       map[string]*Option
 }
 
 // NewVerb returns an initilized Verb
@@ -66,6 +68,7 @@ func NewVerb(text, description string, callback VerbCB) *Verb {
 	v.main = NewOption(text, description)
 	v.callback = callback
 	v.suboptions = list.New()
+	v.opts = make(map[string]*Option)
 	return &v
 }
 
@@ -87,6 +90,12 @@ func (v *Verb) String() string {
 // AddOption adds an option to the verb
 func (v *Verb) AddOption(o *Option) {
 	v.suboptions.PushBack(o)
+	v.opts[o.text] = o
+}
+
+// GetOption returns a pointer to the option by name
+func (v *Verb) GetOption(name string) (p *Option) {
+	return v.opts[name]
 }
 
 // Parser structure
@@ -231,11 +240,14 @@ func (p Parser) AddVerb(v *Verb) {
 }
 
 // Run excutes parsed verbs and options
-func (p Parser) Run() {
+func (p Parser) Run() (bool, error) {
 	if nil != p.activePreVerbOptions {
 		// Process the pre-verb options
 		for e := p.activePreVerbOptions.Front(); e != nil; e = e.Next() {
-			e.Value.(*Option).OnOptionFound()
+			result, err := e.Value.(*Option).OnOptionFound()
+			if err != nil {
+				return result, err
+			}
 		}
 	}
 	// Process the verb
@@ -247,4 +259,5 @@ func (p Parser) Run() {
 		// Finally process the verb
 		p.activeVerb.OnVerbFound()
 	}
+	return true, nil
 }
