@@ -5,6 +5,7 @@ import (
 )
 
 type Context struct {
+	text string
 }
 
 type Handler interface {
@@ -26,7 +27,7 @@ func (f HandlerFunc) OnEvent(c Context) {
 }
 
 func (p Program) Run() {
-	c := Context{}
+	c := Context{"Hello"}
 	if p.callback != nil {
 		p.callback.OnEvent(c)
 	}
@@ -34,8 +35,8 @@ func (p Program) Run() {
 
 func main() {
 	p := Program{}
-	p.callback = HandlerFunc(func(Context) {
-		fmt.Println("Anon handler")
+	p.callback = HandlerFunc(func(c Context) {
+		fmt.Println("Anon handler c=" + c.text)
 	})
 
 	fmt.Println(p)
