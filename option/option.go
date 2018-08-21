@@ -56,10 +56,11 @@ func (o *Option) OnOptionFound() (result bool, err error) {
 
 // Verb contains an action callback, text description and optional options
 type Verb struct {
-	main       *Option
-	suboptions *list.List
-	callback   VerbCB
-	opts       map[string]*Option
+	main             *Option
+	suboptions       *list.List
+	callback         VerbCB
+	opts             map[string]*Option
+	isOptionRequired bool
 }
 
 // NewVerb returns an initilized Verb
@@ -69,6 +70,7 @@ func NewVerb(text, description string, callback VerbCB) *Verb {
 	v.callback = callback
 	v.suboptions = list.New()
 	v.opts = make(map[string]*Option)
+	v.isOptionRequired = false
 	return &v
 }
 
@@ -91,6 +93,16 @@ func (v *Verb) String() string {
 func (v *Verb) AddOption(o *Option) {
 	v.suboptions.PushBack(o)
 	v.opts[o.text] = o
+}
+
+// SetRequireOption marka this verb as requiring an option
+func (v *Verb) SetRequireOption() {
+	v.isOptionRequired = true
+}
+
+// IsOptionRequired returns true if the verbs requires an option
+func (v *Verb) IsOptionRequired() bool {
+	return v.isOptionRequired
 }
 
 // GetOption returns a pointer to the option by name
@@ -255,6 +267,11 @@ func (p Parser) Run() (bool, error) {
 		// Process the post-verb options
 		for e := p.activeOptions.Front(); e != nil; e = e.Next() {
 			e.Value.(*Option).OnOptionFound()
+		}
+		// Abort the run, if the verb requires an option
+		if p.activeVerb.IsOptionRequired() && p.activeOptions.Len() == 0 {
+			fmt.Printf("%s\n", p.activeVerb)
+			return false, nil
 		}
 		// Finally process the verb
 		p.activeVerb.OnVerbFound()
