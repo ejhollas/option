@@ -95,8 +95,8 @@ func (v *Verb) AddOption(o *Option) {
 	v.opts[o.text] = o
 }
 
-// SetRequireOption marka this verb as requiring an option
-func (v *Verb) SetRequireOption() {
+// SetRequiresOption marka this verb as requiring an option
+func (v *Verb) SetRequiresOption() {
 	v.isOptionRequired = true
 }
 
