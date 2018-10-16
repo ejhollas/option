@@ -241,6 +241,11 @@ func (p Parser) ShowHelp() {
 	}
 }
 
+// GetActiveVerb returns the active verb or nil
+func (p Parser) GetActiveVerb() (v *Verb) {
+	return p.activeVerb
+}
+
 // AddOption adds the option to the parser
 func (p Parser) AddOption(o *Option) {
 	p.options.PushBack(o)
