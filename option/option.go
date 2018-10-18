@@ -262,7 +262,7 @@ func (p Parser) AddVerb(v *Verb) {
 }
 
 // Run excutes parsed verbs and options
-func (p Parser) Run() (bool, error) {
+func (p Parser) RunPreVerb() (bool, error) {
 	if nil != p.activePreVerbOptions {
 		// Process the pre-verb options
 		for e := p.activePreVerbOptions.Front(); e != nil; e = e.Next() {
@@ -272,6 +272,10 @@ func (p Parser) Run() (bool, error) {
 			}
 		}
 	}
+	return true, nil
+}
+
+func (p Parser) RunVerb() (bool, error) {
 	// Process the verb
 	if nil != p.activeVerb {
 		// Process the post-verb options
@@ -287,4 +291,12 @@ func (p Parser) Run() (bool, error) {
 		p.activeVerb.OnVerbFound()
 	}
 	return true, nil
+}
+
+func (p Parser) Run() (bool, error) {
+	result, err := p.RunPreVerb()
+	if nil != err {
+		return result, err
+	}
+	return p.RunVerb()
 }
