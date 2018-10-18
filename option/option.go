@@ -89,6 +89,11 @@ func (v *Verb) String() string {
 	return s
 }
 
+// Text returns the name of the verb
+func (v *Verb) Text() string {
+	return v.main.text
+}
+
 // AddOption adds an option to the verb
 func (v *Verb) AddOption(o *Option) {
 	v.suboptions.PushBack(o)
@@ -158,11 +163,11 @@ func (p *Parser) Parse(args []string) bool {
 				if argOption[0] == option.text {
 					if len(argOption) > 1 {
 						option.Data = argOption[1]
-						p.activePreVerbOptions.PushBack(option)
-						argHandled++
-						if debug {
-							fmt.Println("Debug: Found PreOption: " + option.String())
-						}
+					}
+					p.activePreVerbOptions.PushBack(option)
+					argHandled++
+					if debug {
+						fmt.Println("Debug: Found PreOption: " + option.String())
 					}
 				}
 			}
